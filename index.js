@@ -7,7 +7,10 @@ const {
   Keyboard,
   session,
   InlineKeyboard,
+  GrammyError,
+  HttpError,
 } = require("grammy");
+
 const bot = new Bot(process.env.BOT_API_KEY);
 
 const doc = require("./spreadsheet");
@@ -34,31 +37,35 @@ function createInitialSessionData() {
   };
 }
 bot.use(hydrate());
+
 bot.use(session({ initial: createInitialSessionData }));
 bot.use(conversations());
 bot.use(createConversation(poll));
 
 bot.api.setMyCommands([
-  { command: "start", description: "Start bot" },
-  { command: "help", description: "Show help" },
+  { command: "start", description: "Розпочати роботу з ботом" },
+  { command: "help", description: "Довідкова інформація" },
 ]);
 
 bot.command("start", async (ctx) => {
   console.log("start getting");
-  const inlineKeyboard = new InlineKeyboard().text("Start", "start_poll");
-  await ctx.reply("Hello. You need to answer a few questions", {
+  const inlineKeyboard = new InlineKeyboard().text(
+    "Натисни тут, щоб почати",
+    "start_poll"
+  );
+  await ctx.reply(`Привіт\. Потрібно відповісти на декілька запитань\.`, {
     reply_markup: inlineKeyboard,
   });
 });
 
 bot.command("help", async (ctx) => {
   console.log("show help");
-  await ctx.reply("Help context show here");
+  await ctx.reply("Тут буде текст довідки");
 });
 
 bot.callbackQuery("start_poll", async (ctx) => {
   await ctx.callbackQuery.message.editText(
-    "Hello. You need to answer a few questions",
+    `Привіт\. Потрібно відповісти на декілька запитань\.`,
     {}
   );
   ctx.session.user = ctx.from.username;
@@ -70,15 +77,19 @@ async function poll(conversation, ctx) {
   ctx.session.questions = await getQuestions();
   ctx.session.startDate = Date.now();
   const answers = [];
+  await ctx.reply(
+    `Загальна кількість питань: ${ctx.session.questions.length}\.\n
+  Дані будуть передані в обробку після відповіді на всі запитання\!`
+  );
   for (const [index, question] of ctx.session.questions.entries()) {
-    await ctx.reply(`Question ${index + 1}: ${question}`);
+    await ctx.reply(`Питання ${index + 1}: ${question}`);
     const answer = await conversation.waitFor(":text");
     answers.push(answer.msg.text);
   }
   ctx.session.answers = answers;
   ctx.session.endDate = Date.now();
 
-  await ctx.reply("Thank you for your answers!");
+  await ctx.reply("Дякую за відповіді!");
   await setAnswers(ctx);
 }
 
@@ -111,6 +122,19 @@ async function setAnswers(ctx) {
 //   // const cell = sheet.getCell(1, 0);
 //   // await ctx.reply(`${cell.value} ${rows.length}`);
 // });
+
+bot.catch((err) => {
+  const ctx = err.ctx;
+  console.error(`Error while handling update ${ctx.update.update_id}`);
+  const e = err.error;
+  if (e instanceof GrammyError) {
+    console.error("Error in request:", e.description);
+  } else if (e instanceof HttpError) {
+    console.error("Could not contact Telegram:", e);
+  } else {
+    console.error("Unknown error", e);
+  }
+});
 
 // bot.start();
 const PORT = process.env.PORT;
