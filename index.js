@@ -48,6 +48,7 @@ bot.api.setMyCommands([
 ]);
 
 bot.command("start", async (ctx) => {
+  ctx.react("👍");
   console.log("start getting");
   const inlineKeyboard = new InlineKeyboard().text(
     "Натисни тут, щоб почати",
