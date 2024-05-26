@@ -116,14 +116,6 @@ async function setAnswers(ctx) {
   newRow.save();
 }
 
-// bot.on("message", async (ctx) => {
-//   // const sheet = doc.sheetsByTitle["questions"];
-//   // await sheet.loadCells();
-//   // const rows = await sheet.getRows();
-//   // const cell = sheet.getCell(1, 0);
-//   // await ctx.reply(`${cell.value} ${rows.length}`);
-// });
-
 bot.catch((err) => {
   const ctx = err.ctx;
   console.error(`Error while handling update ${ctx.update.update_id}`);
@@ -136,11 +128,14 @@ bot.catch((err) => {
     console.error("Unknown error", e);
   }
 });
+const WebHookUrl = process.env.WEBHOOKURL;
+if (!WebHookUrl) {
+  bot.start();
+} else {
+  bot.api.setWebhook(WebHookUrl);
+}
 
-// bot.start();
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-  console.log(`listening PORT=${PORT}`);
+  console.log(`listening on PORT=${PORT}`);
 });
-
-bot.api.setWebhook(process.env.URL);
