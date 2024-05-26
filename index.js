@@ -128,11 +128,11 @@ bot.catch((err) => {
     console.error("Unknown error", e);
   }
 });
-const WebHookUrl = process.env.WEBHOOKURL;
-if (!WebHookUrl) {
-  bot.start();
+const webHookUrl = process.env.WEBHOOKURL;
+if (webHookUrl) {
+  bot.api.setWebhook(webHookUrl);
 } else {
-  bot.api.setWebhook(WebHookUrl);
+  bot.start();
 }
 
 const PORT = process.env.PORT;
